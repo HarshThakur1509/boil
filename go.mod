@@ -1,4 +1,4 @@
-module boil
+module github.com/HarshThakur1509/boil
 
 go 1.23.2
 

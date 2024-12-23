@@ -4,9 +4,10 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package controllers
 
 import (
-	"boil/cmd/functions"
 	"fmt"
 	"strings"
+
+	"github.com/HarshThakur1509/boil/cmd/functions"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

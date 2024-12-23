@@ -4,12 +4,12 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"boil/cmd/functions"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
 )
 

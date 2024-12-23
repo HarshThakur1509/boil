@@ -4,11 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package models
 
 import (
-	"boil/cmd/functions"
 	"fmt"
 	"log"
 	"strings"
 
+	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

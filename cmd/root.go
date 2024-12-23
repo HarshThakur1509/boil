@@ -4,11 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"boil/cmd/controllers"
-	"boil/cmd/models"
 	"fmt"
 	"os"
 
+	"github.com/HarshThakur1509/boil/cmd/controllers"
+	"github.com/HarshThakur1509/boil/cmd/models"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
