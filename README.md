@@ -3,5 +3,5 @@
 ### From Source (requires Go installed)
 
 ```bash
-go install github.com/harshthakur1509/boil@latest
+go install github.com/HarshThakur1509/boil@latest
 ```
