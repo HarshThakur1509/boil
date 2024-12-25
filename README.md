@@ -3,9 +3,5 @@
 ### From Source (requires Go installed)
 
 ```bash
-go install github.com/username/repo-name@latest
+go install github.com/harshthakur1509/boil@latest
 ```
-
-# hello
-
-hello
