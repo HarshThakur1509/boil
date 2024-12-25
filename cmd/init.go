@@ -16,7 +16,7 @@ import (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "A brief description of your command",
+	Short: "init downloads the boilerplate code from github repo.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"

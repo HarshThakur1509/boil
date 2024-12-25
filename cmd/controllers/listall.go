@@ -16,12 +16,11 @@ import (
 // listallCmd represents the listall command
 var listallCmd = &cobra.Command{
 	Use:   "listall",
-	Short: "A brief description of your command",
+	Short: "listall command adds listall controller to the project.",
 	Long:  ``,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		model := args[0]
-		// lower := strings.ToLower(model)
 		capital := strings.Title(model)
 
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))

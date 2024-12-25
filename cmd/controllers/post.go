@@ -15,7 +15,7 @@ import (
 // postCmd represents the post command
 var postCmd = &cobra.Command{
 	Use:   "post",
-	Short: "A brief description of your command",
+	Short: "post command adds post controller to the project.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		model := args[0]
@@ -29,9 +29,6 @@ var postCmd = &cobra.Command{
 		// Get the model details
 		modelData := viper.GetStringMap(fmt.Sprintf("models.%s", model))
 		fields := functions.WriteMap(modelData)
-		// for key, value := range modelData {
-		// 	fields += fmt.Sprintf("\t\t%s %s\n", key, value)
-		// }
 
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 

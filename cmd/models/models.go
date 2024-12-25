@@ -17,7 +17,6 @@ import (
 var ModelsCmd = &cobra.Command{
 	Use:   "models",
 	Short: "Adds Models to the project",
-	Long:  ``,
 	Args:  cobra.MinimumNArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(viper.GetViper().GetString("port"))

@@ -12,7 +12,7 @@ import (
 // controllersCmd represents the controllers command
 var ControllersCmd = &cobra.Command{
 	Use:   "controllers",
-	Short: "A brief description of your command",
+	Short: "controllers adds controllers to the project.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("controllers called")
