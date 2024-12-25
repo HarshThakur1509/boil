@@ -17,9 +17,9 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "boil",
-	Short: "Boil is CLI tool to create boilerplate code for golang rest api which use go standard library.",
-	Long:  ``,
+	Use:     "boil",
+	Short:   "Boil is CLI tool to create boilerplate code for golang rest api which use go standard library.",
+	Version: "1.0.0",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
