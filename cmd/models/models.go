@@ -17,14 +17,20 @@ import (
 var ModelsCmd = &cobra.Command{
 	Use:   "models",
 	Short: "Adds Models to the project",
-	Args:  cobra.MinimumNArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(viper.GetViper().GetString("port"))
-		modelName := args[0]
-		fields := args[1:]
+		modelName, _ := cmd.Flags().GetString("name")
+		fields := args // Get remaining args after flags
+
+		if modelName == "" {
+			log.Fatal("Model name is required. Use --name flag")
+		}
+
+		if len(fields) == 0 {
+			log.Fatal("Fields are required. Use --fields followed by field definitions")
+		}
 
 		if len(fields)%2 != 0 {
-			log.Fatalf("Fields must be provided as name and data type pairs")
+			log.Fatal("Fields must be provided as name and data type pairs")
 		}
 
 		// Build field map from input
@@ -74,14 +80,6 @@ var ModelsCmd = &cobra.Command{
 }
 
 func init() {
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// modelsCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// modelsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	ModelsCmd.Flags().StringP("name", "n", "", "Name of the model")
+	ModelsCmd.Flags().BoolP("fields", "f", false, "Indicates that following arguments are field definitions")
 }

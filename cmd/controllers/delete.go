@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
@@ -17,11 +18,13 @@ import (
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "delete command adds delete controller to the project.",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		model := args[0]
-		capital := strings.Title(model)
+		model, _ := cmd.Flags().GetString("name")
+		if model == "" {
+			log.Fatal("Model name is required. Use --name flag")
+		}
 
+		capital := strings.Title(model)
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 
 		code := fmt.Sprintf(`
@@ -42,20 +45,13 @@ router.HandleFunc("DELETE /%[2]v/{id}", controllers.Delete%[1]v)
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Listing all entities for model: %s\n", model)
+		fmt.Printf("Delete controller added for model: %s\n", model)
 	},
 }
 
 func init() {
 	ControllersCmd.AddCommand(deleteCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add name flag to each command
+	deleteCmd.Flags().StringP("name", "n", "", "Name of the model")
 }

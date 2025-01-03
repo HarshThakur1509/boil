@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
@@ -17,12 +18,13 @@ import (
 var listallCmd = &cobra.Command{
 	Use:   "listall",
 	Short: "listall command adds listall controller to the project.",
-	Long:  ``,
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		model := args[0]
-		capital := strings.Title(model)
+		model, _ := cmd.Flags().GetString("name")
+		if model == "" {
+			log.Fatal("Model name is required. Use --name flag")
+		}
 
+		capital := strings.Title(model)
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 
 		code := fmt.Sprintf(`
@@ -44,20 +46,13 @@ router.HandleFunc("GET /%[2]v", controllers.List%[1]v)
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Listing all entities for model: %s\n", model)
+		fmt.Printf("Listall controller added for model: %s\n", model)
 	},
 }
 
 func init() {
 	ControllersCmd.AddCommand(listallCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listallCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listallCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add name flag to each command
+	listallCmd.Flags().StringP("name", "n", "", "Name of the model")
 }

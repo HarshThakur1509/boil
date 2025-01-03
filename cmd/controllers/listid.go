@@ -5,10 +5,10 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -17,9 +17,13 @@ import (
 var listidCmd = &cobra.Command{
 	Use:   "listid",
 	Short: "listid command adds listid controller to the project.",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		model := args[0]
+		model, _ := cmd.Flags().GetString("name")
+
+		if model == "" {
+			log.Fatal("Model name is required. Use --name flag")
+		}
+
 		capital := strings.Title(model)
 
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
@@ -50,15 +54,9 @@ router.HandleFunc("GET /%[2]v/{id}", controllers.List%[1]vId)
 }
 
 func init() {
+	// Remove Args check since we're using flags
 	ControllersCmd.AddCommand(listidCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listidCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listidCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add name flag
+	listidCmd.Flags().StringP("name", "n", "", "Name of the model")
 }

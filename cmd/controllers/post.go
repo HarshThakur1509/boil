@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
@@ -16,11 +17,13 @@ import (
 var postCmd = &cobra.Command{
 	Use:   "post",
 	Short: "post command adds post controller to the project.",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		model := args[0]
-		capital := strings.Title(model)
+		model, _ := cmd.Flags().GetString("name")
+		if model == "" {
+			log.Fatal("Model name is required. Use --name flag")
+		}
 
+		capital := strings.Title(model)
 		viper.ReadInConfig()
 
 		// Check if the model exists
@@ -67,20 +70,13 @@ router.HandleFunc("POST /%[2]v", controllers.Post%[1]v)
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Listing all entities for model: %s\n", model)
+		fmt.Printf("Post controller added for model: %s\n", model)
 	},
 }
 
 func init() {
 	ControllersCmd.AddCommand(postCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// postCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// postCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add name flag to each command
+	postCmd.Flags().StringP("name", "n", "", "Name of the model")
 }
