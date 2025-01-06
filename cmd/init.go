@@ -1,6 +1,4 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
+// init.go
 package cmd
 
 import (
@@ -13,13 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init downloads the boilerplate code from github repo.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
+		folder, _ := cmd.Flags().GetString("folder")
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			log.Fatalf("Failed to get current working directory: %v", err)
@@ -27,24 +26,19 @@ var initCmd = &cobra.Command{
 
 		tempDir := filepath.Join(cwd, "temp-clone")
 
-		if err := functions.CloneRepo(repoURL, tempDir); err != nil {
+		if err := functions.CloneRepo(repoURL, tempDir, folder); err != nil {
 			log.Fatalf("Error initializing project: %v", err)
 		}
 
-		fmt.Println("Repository cloned successfully into the root directory:", cwd)
+		if folder != "" {
+			fmt.Printf("Successfully downloaded folder '%s' from repository into: %s\n", folder, cwd)
+		} else {
+			fmt.Println("Repository cloned successfully into:", cwd)
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	initCmd.Flags().StringP("folder", "f", "", "Specific folder to download from the repository")
 }

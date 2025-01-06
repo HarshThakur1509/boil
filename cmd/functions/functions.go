@@ -107,37 +107,87 @@ func WriteMap(m map[string]any) string {
 	return result
 }
 
-func CloneRepo(repoURL, targetDir string) error {
-	// Clone the repository directly into the target directory
-	cmd := exec.Command("git", "clone", repoURL, targetDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to clone repository: %w", err)
-	}
-
-	// Move the files from the cloned folder to the root
-	contents, err := os.ReadDir(targetDir)
-	if err != nil {
-		return fmt.Errorf("failed to read cloned directory: %w", err)
-	}
-
-	for _, entry := range contents {
-		if entry.Name() == ".git" {
-			// Skip moving the .git folder
-			continue
+func CloneRepo(repoURL, targetDir, folder string) error {
+	// First, do a sparse checkout if a specific folder is requested
+	if folder != "" {
+		// Create the target directory
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return fmt.Errorf("failed to create target directory: %w", err)
 		}
 
-		srcPath := filepath.Join(targetDir, entry.Name())
-		destPath := filepath.Join(targetDir, "..", entry.Name())
+		// Initialize git repo
+		cmd := exec.Command("git", "init")
+		cmd.Dir = targetDir
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to initialize git repository: %w", err)
+		}
 
-		// Rename (move) each file/directory to the parent directory
+		// Add remote
+		cmd = exec.Command("git", "remote", "add", "origin", repoURL)
+		cmd.Dir = targetDir
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to add remote: %w", err)
+		}
+
+		// Enable sparse checkout
+		cmd = exec.Command("git", "config", "core.sparseCheckout", "true")
+		cmd.Dir = targetDir
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to enable sparse checkout: %w", err)
+		}
+
+		// Set sparse checkout path
+		sparseCheckoutPath := filepath.Join(targetDir, ".git", "info", "sparse-checkout")
+		if err := os.MkdirAll(filepath.Dir(sparseCheckoutPath), 0755); err != nil {
+			return fmt.Errorf("failed to create sparse-checkout directory: %w", err)
+		}
+		if err := os.WriteFile(sparseCheckoutPath, []byte(folder), 0644); err != nil {
+			return fmt.Errorf("failed to write sparse-checkout file: %w", err)
+		}
+
+		// Pull the repository
+		cmd = exec.Command("git", "pull", "origin", "main")
+		cmd.Dir = targetDir
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to pull repository: %w", err)
+		}
+
+		// Move the specific folder to the parent directory
+		srcPath := filepath.Join(targetDir, folder)
+		destPath := filepath.Join(targetDir, "..", folder)
 		if err := os.Rename(srcPath, destPath); err != nil {
-			return fmt.Errorf("failed to move %s: %w", entry.Name(), err)
+			return fmt.Errorf("failed to move folder: %w", err)
+		}
+
+	} else {
+		// Clone the entire repository if no specific folder is specified
+		cmd := exec.Command("git", "clone", repoURL, targetDir)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to clone repository: %w", err)
+		}
+
+		// Move all files except .git to parent directory
+		contents, err := os.ReadDir(targetDir)
+		if err != nil {
+			return fmt.Errorf("failed to read cloned directory: %w", err)
+		}
+
+		for _, entry := range contents {
+			if entry.Name() == ".git" {
+				continue
+			}
+
+			srcPath := filepath.Join(targetDir, entry.Name())
+			destPath := filepath.Join(targetDir, "..", entry.Name())
+			if err := os.Rename(srcPath, destPath); err != nil {
+				return fmt.Errorf("failed to move %s: %w", entry.Name(), err)
+			}
 		}
 	}
 
-	// Remove the now-empty cloned directory
+	// Clean up the temporary directory
 	if err := os.RemoveAll(targetDir); err != nil {
 		return fmt.Errorf("failed to clean up temporary directory: %w", err)
 	}
