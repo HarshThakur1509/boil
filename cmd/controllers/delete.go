@@ -27,21 +27,43 @@ var deleteCmd = &cobra.Command{
 		capital := strings.Title(model)
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 
-		code := fmt.Sprintf(`
-func Delete%[1]v(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+		code := ""
+		apiPath := ""
+		apiCode := ""
+		if viper.GetString("Folder") == "standard" {
 
-	var %[2]v models.%[1]v
-	initializers.DB.Delete(&%[2]v, id)
-	w.WriteHeader(http.StatusNoContent) // 204 No Content
+			code = fmt.Sprintf(`
+	func Delete%[1]v(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+	
+		var %[2]v models.%[1]v
+		initializers.DB.Delete(&%[2]v, id)
+		w.WriteHeader(http.StatusNoContent) // 204 No Content
+	}
+			`, capital, model)
+
+			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+	router.HandleFunc("DELETE /%[2]v/{id}", controllers.Delete%[1]v)
+	// Add code here
+			`, capital, model)
+		} else if viper.GetString("Folder") == "gin" {
+			code = fmt.Sprintf(`
+func Delete%[1]v(c *gin.Context) {
+	id := c.Param("id")
+
+	initializers.DB.Delete(&models.%[1]v{}, id)
+
+	c.Status(200)
 }
-		`, capital, model)
+			`, capital, model)
 
-		apiPath := fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
-		apiCode := fmt.Sprintf(`
-router.HandleFunc("DELETE /%[2]v/{id}", controllers.Delete%[1]v)
+			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+r.DELETE("/%[2]v/:id", controllers.Delete%[1]v)
 // Add code here
-		`, capital, model)
+			`, capital, model)
+		}
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)

@@ -107,90 +107,117 @@ func WriteMap(m map[string]any) string {
 	return result
 }
 
-func CloneRepo(repoURL, targetDir, folder string) error {
-	// First, do a sparse checkout if a specific folder is requested
-	if folder != "" {
-		// Create the target directory
-		if err := os.MkdirAll(targetDir, 0755); err != nil {
-			return fmt.Errorf("failed to create target directory: %w", err)
-		}
+// initGitRepo initializes a new git repository in the target directory
+func initGitRepo(targetDir string) error {
+	cmd := exec.Command("git", "init")
+	cmd.Dir = targetDir
+	return cmd.Run()
+}
 
-		// Initialize git repo
-		cmd := exec.Command("git", "init")
-		cmd.Dir = targetDir
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to initialize git repository: %w", err)
-		}
+// setupRemote adds the remote repository URL
+func setupRemote(targetDir, repoURL string) error {
+	cmd := exec.Command("git", "remote", "add", "origin", repoURL)
+	cmd.Dir = targetDir
+	return cmd.Run()
+}
 
-		// Add remote
-		cmd = exec.Command("git", "remote", "add", "origin", repoURL)
-		cmd.Dir = targetDir
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to add remote: %w", err)
-		}
-
-		// Enable sparse checkout
-		cmd = exec.Command("git", "config", "core.sparseCheckout", "true")
-		cmd.Dir = targetDir
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to enable sparse checkout: %w", err)
-		}
-
-		// Set sparse checkout path
-		sparseCheckoutPath := filepath.Join(targetDir, ".git", "info", "sparse-checkout")
-		if err := os.MkdirAll(filepath.Dir(sparseCheckoutPath), 0755); err != nil {
-			return fmt.Errorf("failed to create sparse-checkout directory: %w", err)
-		}
-		if err := os.WriteFile(sparseCheckoutPath, []byte(folder), 0644); err != nil {
-			return fmt.Errorf("failed to write sparse-checkout file: %w", err)
-		}
-
-		// Pull the repository
-		cmd = exec.Command("git", "pull", "origin", "main")
-		cmd.Dir = targetDir
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to pull repository: %w", err)
-		}
-
-		// Move the specific folder to the parent directory
-		srcPath := filepath.Join(targetDir, folder)
-		destPath := filepath.Join(targetDir, "..", folder)
-		if err := os.Rename(srcPath, destPath); err != nil {
-			return fmt.Errorf("failed to move folder: %w", err)
-		}
-
-	} else {
-		// Clone the entire repository if no specific folder is specified
-		cmd := exec.Command("git", "clone", repoURL, targetDir)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to clone repository: %w", err)
-		}
-
-		// Move all files except .git to parent directory
-		contents, err := os.ReadDir(targetDir)
-		if err != nil {
-			return fmt.Errorf("failed to read cloned directory: %w", err)
-		}
-
-		for _, entry := range contents {
-			if entry.Name() == ".git" {
-				continue
-			}
-
-			srcPath := filepath.Join(targetDir, entry.Name())
-			destPath := filepath.Join(targetDir, "..", entry.Name())
-			if err := os.Rename(srcPath, destPath); err != nil {
-				return fmt.Errorf("failed to move %s: %w", entry.Name(), err)
-			}
-		}
+// setupSparseCheckout enables and configures sparse checkout
+func setupSparseCheckout(targetDir, folder string) error {
+	// Enable sparse checkout
+	cmd := exec.Command("git", "config", "core.sparseCheckout", "true")
+	cmd.Dir = targetDir
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 
-	// Clean up the temporary directory
-	if err := os.RemoveAll(targetDir); err != nil {
-		return fmt.Errorf("failed to clean up temporary directory: %w", err)
+	// Write sparse checkout pattern
+	sparseCheckoutPath := filepath.Join(targetDir, ".git", "info", "sparse-checkout")
+	if err := os.MkdirAll(filepath.Dir(sparseCheckoutPath), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(sparseCheckoutPath, []byte(folder+"/*"), 0644)
+}
+
+// pullRepo pulls the repository from remote
+func pullRepo(targetDir string) error {
+	cmd := exec.Command("git", "pull", "origin", "main")
+	cmd.Dir = targetDir
+	return cmd.Run()
+}
+
+// moveContents moves files from source to destination directory
+func moveContents(srcDir, destDir string) error {
+	contents, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range contents {
+		if entry.Name() == ".git" {
+			continue
+		}
+		src := filepath.Join(srcDir, entry.Name())
+		dest := filepath.Join(destDir, entry.Name())
+		if err := os.Rename(src, dest); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cloneFullRepo clones the entire repository
+func cloneFullRepo(repoURL, targetDir, parentDir string) error {
+	cmd := exec.Command("git", "clone", repoURL, targetDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return moveContents(targetDir, parentDir)
+}
+
+// cloneSparseRepo clones specific folder using sparse checkout
+func cloneSparseRepo(repoURL, targetDir, parentDir, folder string) error {
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("failed to create target directory: %w", err)
+	}
+
+	steps := []struct {
+		name string
+		fn   func() error
+	}{
+		{"init git repo", func() error { return initGitRepo(targetDir) }},
+		{"setup remote", func() error { return setupRemote(targetDir, repoURL) }},
+		{"setup sparse checkout", func() error { return setupSparseCheckout(targetDir, folder) }},
+		{"pull repo", func() error { return pullRepo(targetDir) }},
+		{"move contents", func() error { return moveContents(filepath.Join(targetDir, folder), parentDir) }},
+	}
+
+	for _, step := range steps {
+		if err := step.fn(); err != nil {
+			return fmt.Errorf("failed to %s: %w", step.name, err)
+		}
 	}
 
 	return nil
+}
+
+// CloneRepo clones either the entire repository or a specific folder
+func CloneRepo(repoURL, targetDir, folder string) error {
+	parentDir := filepath.Dir(targetDir)
+	var err error
+
+	if folder != "" {
+		err = cloneSparseRepo(repoURL, targetDir, parentDir, folder)
+	} else {
+		err = cloneFullRepo(repoURL, targetDir, parentDir)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// Clean up temp directory
+	return os.RemoveAll(targetDir)
 }

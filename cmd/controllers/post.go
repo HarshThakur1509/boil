@@ -35,38 +35,82 @@ var postCmd = &cobra.Command{
 
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 
-		code := fmt.Sprintf(`
-	func Post%[1]v(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-%[2]v		}
-		json.NewDecoder(r.Body).Decode(&body)
+		code := ""
+		apiPath := ""
+		apiCode := ""
 
-		%[3]v := models.%[1]v{
-`, capital, fields, model)
+		if viper.GetString("Folder") == "standard" {
+			code = fmt.Sprintf(`
+			func Post%[1]v(w http.ResponseWriter, r *http.Request) {
+				var body struct {
+		%[2]v		}
+				json.NewDecoder(r.Body).Decode(&body)
+		
+				%[3]v := models.%[1]v{
+		`, capital, fields, model)
 
-		for key := range modelData {
-			code += fmt.Sprintf("\t\t%[1]v: body.%[1]v,\n", strings.Title(key))
-		}
+			for key := range modelData {
+				code += fmt.Sprintf("\t\t%[1]v: body.%[1]v,\n", strings.Title(key))
+			}
 
-		code += fmt.Sprintf(`
-		}
-		result := initializers.DB.Create(&%[1]v)
+			code += fmt.Sprintf(`
+				}
+				result := initializers.DB.Create(&%[1]v)
+		
+				if result.Error != nil {
+					http.Error(w, "Something went wrong!!", http.StatusBadRequest)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusCreated) // 201 Created
+				json.NewEncoder(w).Encode(%[1]v)
+			}
+			`, model)
 
-		if result.Error != nil {
-			http.Error(w, "Something went wrong!!", http.StatusBadRequest)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated) // 201 Created
-		json.NewEncoder(w).Encode(%[1]v)
+			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+		router.HandleFunc("POST /%[2]v", controllers.Post%[1]v)
+		// Add code here
+		
+						`, capital, model)
+		} else if viper.GetString("Folder") == "gin" {
+
+			code = fmt.Sprintf(`
+			func Post%[1]v(c *gin.Context) {
+				var body struct {
+		%[2]v		}
+				c.Bind(&body)
+		
+				%[3]v := models.%[1]v{
+		`, capital, fields, model)
+
+			for key := range modelData {
+				code += fmt.Sprintf("\t\t%[1]v: body.%[1]v,\n", strings.Title(key))
+			}
+
+			code += fmt.Sprintf(`
+				}
+				result := initializers.DB.Create(&%[1]v)
+		
+				// Check if there was an error during creation
+	if result.Error != nil {
+		c.JSON(400, gin.H{"error": result.Error.Error()})
+		return
 	}
-	`, model)
 
-		apiPath := fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
-		apiCode := fmt.Sprintf(`
-router.HandleFunc("POST /%[2]v", controllers.Post%[1]v)
+	// Return the created post
+	c.JSON(200, gin.H{
+		"%[1]v": %[1]v,
+	})
+			}
+			`, model)
+
+			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+r.POST("/%[2]v", controllers.Post%[1]v)
 // Add code here
 				`, capital, model)
+		}
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)

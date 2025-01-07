@@ -9,6 +9,7 @@ import (
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var initCmd = &cobra.Command{
@@ -26,14 +27,35 @@ var initCmd = &cobra.Command{
 
 		tempDir := filepath.Join(cwd, "temp-clone")
 
-		if err := functions.CloneRepo(repoURL, tempDir, folder); err != nil {
-			log.Fatalf("Error initializing project: %v", err)
+		// Add model to "Models" section
+		if !viper.IsSet("Folder") {
+			viper.Set("Folder", folder)
 		}
 
+		// Update boil.yaml configuration
+		viper.Set("path", cwd)
 		if folder != "" {
+			viper.Set("folder", folder)
 			fmt.Printf("Successfully downloaded folder '%s' from repository into: %s\n", folder, cwd)
 		} else {
+			viper.Set("folder", "root")
 			fmt.Println("Repository cloned successfully into:", cwd)
+		}
+
+		// Write configuration to file
+		if err := viper.WriteConfig(); err != nil {
+			// If the config file doesn't exist, create it
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				if err := viper.SafeWriteConfig(); err != nil {
+					log.Fatalf("Failed to create and write to config file: %v", err)
+				}
+			} else {
+				log.Fatalf("Failed to write to config file: %v", err)
+			}
+		}
+
+		if err := functions.CloneRepo(repoURL, tempDir, folder); err != nil {
+			log.Fatalf("Error initializing project: %v", err)
 		}
 	},
 }

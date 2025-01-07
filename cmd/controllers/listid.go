@@ -27,25 +27,49 @@ var listidCmd = &cobra.Command{
 		capital := strings.Title(model)
 
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
+		code := ""
+		apiPath := ""
+		apiCode := ""
+		if viper.GetString("Folder") == "standard" {
 
-		code := fmt.Sprintf(`
+			code = fmt.Sprintf(`
 func List%[1]vId(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+id := r.PathValue("id")
+
+var %[2]v models.%[1]v
+initializers.DB.First(&%[2]v, id)
+
+w.Header().Set("Content-Type", "application/json")
+w.WriteHeader(http.StatusOK)
+json.NewEncoder(w).Encode(%[2]v)
+}
+	`, capital, model)
+
+			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+router.HandleFunc("GET /%[2]v/{id}", controllers.List%[1]vId)
+// Add code here
+	`, capital, model)
+		} else if viper.GetString("Folder") == "gin" {
+			code = fmt.Sprintf(`
+func List%[1]vId(c *gin.Context) {
+	id := c.Param("id")
 
 	var %[2]v models.%[1]v
 	initializers.DB.First(&%[2]v, id)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(%[2]v)
+	c.JSON(200, gin.H{
+		"post": post,
+	})
 }
-		`, capital, model)
+	`, capital, model)
 
-		apiPath := fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
-		apiCode := fmt.Sprintf(`
-router.HandleFunc("GET /%[2]v/{id}", controllers.List%[1]vId)
+			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+r.GET("/%[2]v/:id", controllers.List%[1]vId)
 // Add code here
-		`, capital, model)
+	`, capital, model)
+		}
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)

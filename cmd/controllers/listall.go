@@ -27,7 +27,13 @@ var listallCmd = &cobra.Command{
 		capital := strings.Title(model)
 		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
 
-		code := fmt.Sprintf(`
+		code := ""
+		apiPath := ""
+		apiCode := ""
+
+		if viper.GetString("Folder") == "standard" {
+
+			code = fmt.Sprintf(`
 func List%[1]v(w http.ResponseWriter, r *http.Request) {
 	var %[2]v []models.%[1]v
 	initializers.DB.Find(&%[2]v)
@@ -35,14 +41,33 @@ func List%[1]v(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(%[2]v)
-}
-		`, capital, model)
+	}
+			`, capital, model)
 
-		apiPath := fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
-		apiCode := fmt.Sprintf(`
+			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
 router.HandleFunc("GET /%[2]v", controllers.List%[1]v)
 // Add code here
-		`, capital, model)
+			`, capital, model)
+		} else if viper.GetString("Folder") == "gin" {
+
+			code = fmt.Sprintf(`
+func List%[1]v(c *gin.Context) {
+	var %[2]v []models.%[1]v
+		initializers.DB.Find(&%[2]v)
+
+	c.JSON(200, gin.H{
+		"posts": posts,
+	})
+}
+			`, capital, model)
+
+			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiCode = fmt.Sprintf(`
+r.GET("/%[2]v", controllers.List%[1]v)
+// Add code here
+			`, capital, model)
+		}
 
 		functions.InsertCode(controllersPath, code)
 		functions.ReplaceCode(apiPath, apiCode)
