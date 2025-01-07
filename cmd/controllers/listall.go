@@ -57,7 +57,7 @@ func List%[1]v(c *gin.Context) {
 		initializers.DB.Find(&%[2]v)
 
 	c.JSON(200, gin.H{
-		"posts": posts,
+		"%[2]v": %[2]v,
 	})
 }
 			`, capital, model)

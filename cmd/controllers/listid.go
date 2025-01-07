@@ -59,7 +59,7 @@ func List%[1]vId(c *gin.Context) {
 	initializers.DB.First(&%[2]v, id)
 
 	c.JSON(200, gin.H{
-		"post": post,
+		"%[2]v": %[2]v,
 	})
 }
 	`, capital, model)
