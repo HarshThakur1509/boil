@@ -10,13 +10,7 @@ import (
 )
 
 func InsertCode(path string, content string) error {
-	// Get the absolute path from the relative path
-	// path, err := filepath.Abs(path)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get absolute path: %w", err)
-	// }
-	// modelsPath := fmt.Sprintf("%s\\models\\models.go", path)
-	// Read the existing content of the file
+
 	existingContent, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
@@ -208,10 +202,11 @@ func CloneRepo(repoURL, targetDir, folder string) error {
 	parentDir := filepath.Dir(targetDir)
 	var err error
 
-	if folder != "" {
+	if folder == "gin" || folder == "standard" {
 		err = cloneSparseRepo(repoURL, targetDir, parentDir, folder)
 	} else {
-		err = cloneFullRepo(repoURL, targetDir, parentDir)
+		// err = cloneFullRepo(repoURL, targetDir, parentDir)
+		fmt.Println("Please use provided flag for the folder name")
 	}
 
 	if err != nil {

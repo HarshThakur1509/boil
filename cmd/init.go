@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,10 +35,8 @@ var initCmd = &cobra.Command{
 		viper.Set("path", cwd)
 		if folder != "" {
 			viper.Set("folder", folder)
-			fmt.Printf("Successfully downloaded folder '%s' from repository into: %s\n", folder, cwd)
 		} else {
 			viper.Set("folder", "root")
-			fmt.Println("Repository cloned successfully into:", cwd)
 		}
 
 		// Write configuration to file
