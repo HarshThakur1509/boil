@@ -47,7 +47,7 @@ var ModelsCmd = &cobra.Command{
 		models[modelName] = fieldMap
 		viper.Set("Models", models)
 
-		// Write changes back to the file
+		// Write configuration
 		if err := viper.WriteConfig(); err != nil {
 			// If the config file does not exist, create and write to it
 			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
