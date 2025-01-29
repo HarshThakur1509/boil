@@ -58,6 +58,15 @@ var dockerCmd = &cobra.Command{
 			log.Fatalf("Docker setup failed: %v", err)
 		}
 
+		// delete initializers.LoadEnv()
+		if err := functions.DeleteCode(cwd+`\migrate\migrate.go`, "initializers.LoadEnv()"); err != nil {
+			log.Fatalf("Code deletion failed: %v", err)
+		}
+
+		if err := functions.DeleteCode(cwd+`\main.go`, "initializers.LoadEnv()"); err != nil {
+			log.Fatalf("Code deletion failed: %v", err)
+		}
+
 		fmt.Println("✅ Docker files successfully added to project")
 	},
 }

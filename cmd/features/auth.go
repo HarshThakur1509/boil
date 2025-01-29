@@ -113,10 +113,6 @@ var authCmd = &cobra.Command{
 		functions.ReplaceCode(migratePath, migrateCode)
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 
-		if err := functions.DeleteCode(cwd+`\migrate\migrate.go`, "initializers.LoadEnv()"); err != nil {
-			log.Fatalf("Code deletion failed: %v", err)
-		}
-
 		// controllers content
 		if err := functions.CloneRepo(repoURL, tempDir, repoFolder+"controllers", cwd+`\controllers`); err != nil {
 			log.Fatalf("Docker setup failed: %v", err)
@@ -128,10 +124,6 @@ var authCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 		functions.ReplaceCode(cwd+`\main.go`, string(content))
-
-		if err := functions.DeleteCode(cwd+`\main.go`, "initializers.LoadEnv()"); err != nil {
-			log.Fatalf("Code deletion failed: %v", err)
-		}
 
 	},
 }
