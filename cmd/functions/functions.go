@@ -90,20 +90,25 @@ func ToAutoMigrate(filePath, modelName string) error {
 		return fmt.Errorf("read file: %w", err)
 	}
 
+	model := fmt.Sprintf("&models.%s{}", modelName)
+
 	re := regexp.MustCompile(`initializers\s*\.\s*DB\s*\.\s*AutoMigrate\s*\(\s*([^)]*)\s*\)`)
 	updated := re.ReplaceAllStringFunc(string(content), func(match string) string {
 		parts := re.FindStringSubmatch(match)
 		existing := strings.ReplaceAll(parts[1], " ", "")
 
 		if existing == "" {
-			return fmt.Sprintf("initializers.DB.AutoMigrate(%s)", modelName)
+			return fmt.Sprintf("initializers.DB.AutoMigrate(%s)", model)
 		}
 
-		if strings.Contains(existing, modelName) {
+		if strings.Contains(existing, model) {
 			return match
 		}
 
-		return fmt.Sprintf("initializers.DB.AutoMigrate(%s, %s)", existing, modelName)
+		return fmt.Sprintf(`initializers.DB.AutoMigrate(
+		 %s,
+		 %s,
+		 )`, existing, model)
 	})
 
 	return os.WriteFile(filePath, []byte(updated), 0644)

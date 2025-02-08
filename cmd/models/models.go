@@ -67,12 +67,7 @@ var ModelsCmd = &cobra.Command{
 		functions.InsertCode(modelsPath, modelStruct)
 
 		migratePath := fmt.Sprintf("%s\\migrate\\migrate.go", viper.GetString("path"))
-		migrateCode := fmt.Sprintf(`
-		%[1]v := &models.%[1]v{}
-		// Add code here
-		`, strings.Title(modelName))
 
-		functions.ReplaceCode(migratePath, migrateCode)
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 
 		fmt.Printf("Model '%s' with fields %v has been saved and YAML updated.\n", modelName, fieldMap)

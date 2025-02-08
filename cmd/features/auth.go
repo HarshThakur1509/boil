@@ -71,11 +71,11 @@ var authCmd = &cobra.Command{
 
 		fieldMap := make(map[string]any)
 
-		fieldMap["Email"] = "string"
-		fieldMap["Password"] = "string"
+		fieldMap["Email"] = "string `gorm:\"uniqueIndex;not null\"`"
+		fieldMap["Password"] = "string `gorm:\"default:NULL\" json:\"-\"`"
 		fieldMap["Name"] = "string"
-		fieldMap["ResetToken"] = "string"
-		fieldMap["TokenExpiry"] = "time.Time"
+		fieldMap["ResetToken"] = "string `json:\"-\"`"
+		fieldMap["TokenExpiry"] = "time.Time `json:\"-\"`"
 
 		// Add model to "Models" section
 		if !viper.IsSet("Models") {
@@ -106,12 +106,7 @@ var authCmd = &cobra.Command{
 		functions.InsertCode(modelsPath, modelStruct)
 
 		migratePath := fmt.Sprintf("%s\\migrate\\migrate.go", viper.GetString("path"))
-		migrateCode := fmt.Sprintf(`
-				%[1]v := &models.%[1]v{}
-				// Add code here
-				`, strings.Title(modelName))
 
-		functions.ReplaceCode(migratePath, migrateCode)
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 
 		// controllers content
