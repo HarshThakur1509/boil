@@ -17,6 +17,12 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
 		folder, _ := cmd.Flags().GetString("folder")
+		name, _ := cmd.Flags().GetString("name")
+		cwd := viper.GetString("path")
+
+		if name == "" {
+			name = "myapp"
+		}
 
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -47,10 +53,17 @@ var initCmd = &cobra.Command{
 		if err := functions.CloneRepo(repoURL, tempDir, folder, cwd); err != nil {
 			log.Fatalf("Initialization failed: %v", err)
 		}
+
+		functions.ReplaceCode(cwd+`\go.mod`, name, "myapp")
+		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
+		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
+		functions.ReplaceCode(cwd+`\cmd\migrations\main.go`, name, "myapp")
+		functions.ReplaceCode(cwd+`\internal\routes\routes.go`, name, "myapp")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().StringP("folder", "f", "", "Specific folder to download from the repository")
+	initCmd.Flags().StringP("name", "n", "", "Name of the project")
 }

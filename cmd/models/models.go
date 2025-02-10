@@ -61,12 +61,12 @@ var ModelsCmd = &cobra.Command{
 
 		// Append struct definition to models.go
 		structFields := functions.WriteMap(fieldMap)
-		modelStruct := fmt.Sprintf("\ntype %s struct {\ngorm.Model\n%s}\n", strings.Title(modelName), structFields)
-		modelsPath := fmt.Sprintf("%s\\models\\models.go", viper.GetString("path"))
+		modelStruct := fmt.Sprintf("\ntype %s struct {\n	gorm.Model\n	%s}\n", strings.Title(modelName), structFields)
+		modelsPath := fmt.Sprintf("%s\\internal\\models\\models.go", viper.GetString("path"))
 
 		functions.InsertCode(modelsPath, modelStruct)
 
-		migratePath := fmt.Sprintf("%s\\migrate\\migrate.go", viper.GetString("path"))
+		migratePath := fmt.Sprintf("%s\\cmd\\migrations\\main.go", viper.GetString("path"))
 
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 

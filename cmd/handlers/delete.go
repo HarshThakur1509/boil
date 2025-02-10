@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
-package controllers
+package handlers
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete command adds delete controller to the project.",
+	Short: "delete command adds delete handler to the project.",
 	Run: func(cmd *cobra.Command, args []string) {
 		model, _ := cmd.Flags().GetString("name")
 		if model == "" {
@@ -25,7 +25,7 @@ var deleteCmd = &cobra.Command{
 		}
 
 		capital := strings.Title(model)
-		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
+		controllersPath := fmt.Sprintf("%s\\internal\\handlers\\handlers.go", viper.GetString("path"))
 
 		code := ""
 		apiPath := ""
@@ -42,9 +42,9 @@ var deleteCmd = &cobra.Command{
 	}
 			`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\internal\\routes\\routes.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-	router.HandleFunc("DELETE /%[2]v/{id}", controllers.Delete%[1]v)
+	router.HandleFunc("DELETE /%[2]v/{id}", handlers.Delete%[1]v)
 	// Add code here
 			`, capital, model)
 		} else if viper.GetString("Folder") == "gin" {
@@ -58,21 +58,21 @@ func Delete%[1]v(c *gin.Context) {
 }
 			`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\cmd\\api\\main.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-r.DELETE("/%[2]v/:id", controllers.Delete%[1]v)
+r.DELETE("/%[2]v/:id", handlers.Delete%[1]v)
 // Add code here
 			`, capital, model)
 		}
 
 		functions.InsertCode(controllersPath, code)
-		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Delete controller added for model: %s\n", model)
+		functions.ReplaceCode(apiPath, apiCode, "// Add code here")
+		fmt.Printf("Delete handler added for model: %s\n", model)
 	},
 }
 
 func init() {
-	ControllersCmd.AddCommand(deleteCmd)
+	HandlersCmd.AddCommand(deleteCmd)
 
 	// Add name flag to each command
 	deleteCmd.Flags().StringP("name", "n", "", "Name of the model")

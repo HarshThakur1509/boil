@@ -60,11 +60,11 @@ var dockerCmd = &cobra.Command{
 		}
 
 		// delete initializers.LoadEnv()
-		if err := functions.DeleteCode(cwd+`\migrate\migrate.go`, "initializers.LoadEnv()"); err != nil {
+		if err := functions.DeleteCode(cwd+`\cmd\migrations\main.go`, "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 
-		if err := functions.DeleteCode(cwd+`\main.go`, "initializers.LoadEnv()"); err != nil {
+		if err := functions.DeleteCode(cwd+`\cmd\api\main.go`, "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 

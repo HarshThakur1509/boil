@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
-package controllers
+package handlers
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ var postCmd = &cobra.Command{
 		modelData := viper.GetStringMap(fmt.Sprintf("models.%s", model))
 		fields := functions.WriteMap(modelData)
 
-		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
+		controllersPath := fmt.Sprintf("%s\\internal\\handlers\\handlers.go", viper.GetString("path"))
 
 		code := ""
 		apiPath := ""
@@ -67,9 +67,9 @@ var postCmd = &cobra.Command{
 			}
 			`, model)
 
-			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\internal\\routes\\routes.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-		router.HandleFunc("POST /%[2]v", controllers.Post%[1]v)
+		router.HandleFunc("POST /%[2]v", handlers.Post%[1]v)
 		// Add code here
 		
 						`, capital, model)
@@ -105,21 +105,21 @@ var postCmd = &cobra.Command{
 			}
 			`, model)
 
-			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\cmd\\api\\main.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-r.POST("/%[2]v", controllers.Post%[1]v)
+r.POST("/%[2]v", handlers.Post%[1]v)
 // Add code here
 				`, capital, model)
 		}
 
 		functions.InsertCode(controllersPath, code)
-		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Post controller added for model: %s\n", model)
+		functions.ReplaceCode(apiPath, apiCode, "// Add code here")
+		fmt.Printf("Post handler added for model: %s\n", model)
 	},
 }
 
 func init() {
-	ControllersCmd.AddCommand(postCmd)
+	HandlersCmd.AddCommand(postCmd)
 
 	// Add name flag to each command
 	postCmd.Flags().StringP("name", "n", "", "Name of the model")

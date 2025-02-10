@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
-package controllers
+package handlers
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 // listallCmd represents the listall command
 var listallCmd = &cobra.Command{
 	Use:   "listall",
-	Short: "listall command adds listall controller to the project.",
+	Short: "listall command adds listall handler to the project.",
 	Run: func(cmd *cobra.Command, args []string) {
 		model, _ := cmd.Flags().GetString("name")
 		if model == "" {
@@ -25,7 +25,7 @@ var listallCmd = &cobra.Command{
 		}
 
 		capital := strings.Title(model)
-		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
+		controllersPath := fmt.Sprintf("%s\\internal\\handlers\\handlers.go", viper.GetString("path"))
 
 		code := ""
 		apiPath := ""
@@ -44,9 +44,9 @@ func List%[1]v(w http.ResponseWriter, r *http.Request) {
 	}
 			`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\internal\\routes\\routes.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-router.HandleFunc("GET /%[2]v", controllers.List%[1]v)
+router.HandleFunc("GET /%[2]v", handlers.List%[1]v)
 // Add code here
 			`, capital, model)
 		} else if viper.GetString("Folder") == "gin" {
@@ -62,21 +62,21 @@ func List%[1]v(c *gin.Context) {
 }
 			`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\cmd\\api\\main.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-r.GET("/%[2]v", controllers.List%[1]v)
+r.GET("/%[2]v", handlers.List%[1]v)
 // Add code here
 			`, capital, model)
 		}
 
 		functions.InsertCode(controllersPath, code)
-		functions.ReplaceCode(apiPath, apiCode)
-		fmt.Printf("Listall controller added for model: %s\n", model)
+		functions.ReplaceCode(apiPath, apiCode, "// Add code here")
+		fmt.Printf("Listall handler added for model: %s\n", model)
 	},
 }
 
 func init() {
-	ControllersCmd.AddCommand(listallCmd)
+	HandlersCmd.AddCommand(listallCmd)
 
 	// Add name flag to each command
 	listallCmd.Flags().StringP("name", "n", "", "Name of the model")

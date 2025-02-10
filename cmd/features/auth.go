@@ -58,14 +58,14 @@ var authCmd = &cobra.Command{
 		// Clone and move files
 
 		// api content
-		content, err := functions.ReadRepoFile(repoURL, repoFolder+`api/api.go`)
+		content, err := functions.ReadRepoFile(repoURL, repoFolder+`internal/routes/routes.go`)
 		if err != nil {
 			fmt.Println(err)
 		}
 		apiContent := fmt.Sprintf(`%v
 		// Add code here
 		`, string(content))
-		functions.ReplaceCode(cwd+`\api\api.go`, apiContent)
+		functions.ReplaceCode(cwd+`\internal\routes\routes.go`, apiContent, "// Add code here")
 
 		// models content
 
@@ -100,26 +100,26 @@ var authCmd = &cobra.Command{
 
 		// Append struct definition to models.go
 		structFields := functions.WriteMap(fieldMap)
-		modelStruct := fmt.Sprintf("\ntype %s struct {\ngorm.Model\n%s}\n", strings.Title(modelName), structFields)
-		modelsPath := fmt.Sprintf("%s\\models\\models.go", viper.GetString("path"))
+		modelStruct := fmt.Sprintf("\ntype %s struct {\n	gorm.Model\n	%s}\n", strings.Title(modelName), structFields)
+		modelsPath := fmt.Sprintf("%s\\internal\\models\\models.go", viper.GetString("path"))
 
 		functions.InsertCode(modelsPath, modelStruct)
 
-		migratePath := fmt.Sprintf("%s\\migrate\\migrate.go", viper.GetString("path"))
+		migratePath := fmt.Sprintf("%s\\cmd\\migrations\\main.go", viper.GetString("path"))
 
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 
-		// controllers content
-		if err := functions.CloneRepo(repoURL, tempDir, repoFolder+"controllers", cwd+`\controllers`); err != nil {
-			log.Fatalf("Docker setup failed: %v", err)
+		// handlers content
+		if err := functions.CloneRepo(repoURL, tempDir, repoFolder+"internal/handlers", cwd+`\internal\handlers`); err != nil {
+			log.Fatalf("Code setup failed: %v", err)
 		}
 
 		// main content
-		content, err = functions.ReadRepoFile(repoURL, repoFolder+`main.go`)
+		content, err = functions.ReadRepoFile(repoURL, repoFolder+`cmd/api/main.go`)
 		if err != nil {
 			fmt.Println(err)
 		}
-		functions.ReplaceCode(cwd+`\main.go`, string(content))
+		functions.ReplaceCode(cwd+`\cmd\api\main.go`, string(content), "// Add code here")
 
 	},
 }

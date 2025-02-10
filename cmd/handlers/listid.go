@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
-package controllers
+package handlers
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 // listidCmd represents the listid command
 var listidCmd = &cobra.Command{
 	Use:   "listid",
-	Short: "listid command adds listid controller to the project.",
+	Short: "listid command adds listid handler to the project.",
 	Run: func(cmd *cobra.Command, args []string) {
 		model, _ := cmd.Flags().GetString("name")
 
@@ -26,7 +26,7 @@ var listidCmd = &cobra.Command{
 
 		capital := strings.Title(model)
 
-		controllersPath := fmt.Sprintf("%s\\controllers\\controllers.go", viper.GetString("path"))
+		controllersPath := fmt.Sprintf("%s\\internal\\handlers\\handlers.go", viper.GetString("path"))
 		code := ""
 		apiPath := ""
 		apiCode := ""
@@ -45,9 +45,9 @@ json.NewEncoder(w).Encode(%[2]v)
 }
 	`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\api\\api.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\internal\\routes\\routes.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-router.HandleFunc("GET /%[2]v/{id}", controllers.List%[1]vId)
+router.HandleFunc("GET /%[2]v/{id}", handlers.List%[1]vId)
 // Add code here
 	`, capital, model)
 		} else if viper.GetString("Folder") == "gin" {
@@ -64,22 +64,22 @@ func List%[1]vId(c *gin.Context) {
 }
 	`, capital, model)
 
-			apiPath = fmt.Sprintf("%s\\main.go", viper.GetString("path"))
+			apiPath = fmt.Sprintf("%s\\cmd\\api\\main.go", viper.GetString("path"))
 			apiCode = fmt.Sprintf(`
-r.GET("/%[2]v/:id", controllers.List%[1]vId)
+r.GET("/%[2]v/:id", handlers.List%[1]vId)
 // Add code here
 	`, capital, model)
 		}
 
 		functions.InsertCode(controllersPath, code)
-		functions.ReplaceCode(apiPath, apiCode)
+		functions.ReplaceCode(apiPath, apiCode, "// Add code here")
 		fmt.Printf("Listing all entities for model: %s\n", model)
 	},
 }
 
 func init() {
 	// Remove Args check since we're using flags
-	ControllersCmd.AddCommand(listidCmd)
+	HandlersCmd.AddCommand(listidCmd)
 
 	// Add name flag
 	listidCmd.Flags().StringP("name", "n", "", "Name of the model")

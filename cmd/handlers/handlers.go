@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
-package controllers
+package handlers
 
 import (
 	"fmt"
@@ -10,12 +10,12 @@ import (
 )
 
 // controllersCmd represents the controllers command
-var ControllersCmd = &cobra.Command{
-	Use:   "controllers",
-	Short: "controllers adds controllers to the project.",
+var HandlersCmd = &cobra.Command{
+	Use:   "handlers",
+	Short: "handlers adds controllers to the project.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("controllers called")
+		fmt.Println("handlers called")
 	},
 }
 

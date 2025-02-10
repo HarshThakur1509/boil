@@ -30,7 +30,7 @@ func InsertCode(path string, content string) error {
 	return nil
 }
 
-func ReplaceCode(path string, code string) error {
+func ReplaceCode(path string, code string, replace string) error {
 
 	// Read the file content
 	content, err := os.ReadFile(path)
@@ -39,12 +39,12 @@ func ReplaceCode(path string, code string) error {
 	}
 
 	contentStr := string(content)
-	if !strings.Contains(contentStr, "// Add code here") {
-		return fmt.Errorf("the file does not contain the '// Add code here' comment")
+	if !strings.Contains(contentStr, replace) {
+		return fmt.Errorf("the file does not contain the '%s' comment", replace)
 	}
 
 	// Replace the comment with the provided code
-	updatedContent := strings.Replace(contentStr, "// Add code here", code, 1)
+	updatedContent := strings.Replace(contentStr, replace, code, 1)
 
 	// Write the updated content back to the file
 	if err := os.WriteFile(path, []byte(updatedContent), 0644); err != nil {
