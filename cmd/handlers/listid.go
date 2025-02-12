@@ -30,7 +30,7 @@ var listidCmd = &cobra.Command{
 		code := ""
 		apiPath := ""
 		apiCode := ""
-		if viper.GetString("Folder") == "standard" {
+		if viper.GetString("Framework") == "standard" {
 
 			code = fmt.Sprintf(`
 func List%[1]vId(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,7 @@ json.NewEncoder(w).Encode(%[2]v)
 router.HandleFunc("GET /%[2]v/{id}", handlers.List%[1]vId)
 // Add code here
 	`, capital, model)
-		} else if viper.GetString("Folder") == "gin" {
+		} else if viper.GetString("Framework") == "gin" {
 			code = fmt.Sprintf(`
 func List%[1]vId(c *gin.Context) {
 	id := c.Param("id")

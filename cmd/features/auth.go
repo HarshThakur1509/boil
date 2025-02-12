@@ -22,7 +22,7 @@ var authCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
-		framework := viper.GetString("folder")
+		framework := viper.GetString("framework")
 		repoFolder := "features/auth/" + framework + "/"
 		cwd := viper.GetString("path")
 

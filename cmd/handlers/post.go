@@ -39,7 +39,7 @@ var postCmd = &cobra.Command{
 		apiPath := ""
 		apiCode := ""
 
-		if viper.GetString("Folder") == "standard" {
+		if viper.GetString("Framework") == "standard" {
 			code = fmt.Sprintf(`
 			func Post%[1]v(w http.ResponseWriter, r *http.Request) {
 				var body struct {
@@ -73,7 +73,7 @@ var postCmd = &cobra.Command{
 		// Add code here
 		
 						`, capital, model)
-		} else if viper.GetString("Folder") == "gin" {
+		} else if viper.GetString("Framework") == "gin" {
 
 			code = fmt.Sprintf(`
 			func Post%[1]v(c *gin.Context) {

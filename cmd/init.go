@@ -16,7 +16,7 @@ var initCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
-		folder, _ := cmd.Flags().GetString("folder")
+		framework, _ := cmd.Flags().GetString("framework")
 		name, _ := cmd.Flags().GetString("name")
 		cwd := viper.GetString("path")
 
@@ -38,8 +38,8 @@ var initCmd = &cobra.Command{
 
 		// Configure Viper settings
 		viper.Set("path", cwd)
-		if folder != "" {
-			viper.Set("folder", folder)
+		if framework != "" {
+			viper.Set("framework", framework)
 		}
 
 		// Write configuration
@@ -50,7 +50,7 @@ var initCmd = &cobra.Command{
 		}
 
 		// Clone repository
-		if err := functions.CloneRepo(repoURL, tempDir, folder, cwd); err != nil {
+		if err := functions.CloneRepo(repoURL, tempDir, framework, cwd); err != nil {
 			log.Fatalf("Initialization failed: %v", err)
 		}
 
@@ -64,6 +64,6 @@ var initCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().StringP("folder", "f", "", "Specific folder to download from the repository")
+	initCmd.Flags().StringP("framework", "f", "", "Specific framework to download from the repository")
 	initCmd.Flags().StringP("name", "n", "", "Name of the project")
 }

@@ -30,7 +30,7 @@ var deleteCmd = &cobra.Command{
 		code := ""
 		apiPath := ""
 		apiCode := ""
-		if viper.GetString("Folder") == "standard" {
+		if viper.GetString("Framework") == "standard" {
 
 			code = fmt.Sprintf(`
 	func Delete%[1]v(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ var deleteCmd = &cobra.Command{
 	router.HandleFunc("DELETE /%[2]v/{id}", handlers.Delete%[1]v)
 	// Add code here
 			`, capital, model)
-		} else if viper.GetString("Folder") == "gin" {
+		} else if viper.GetString("Framework") == "gin" {
 			code = fmt.Sprintf(`
 func Delete%[1]v(c *gin.Context) {
 	id := c.Param("id")
