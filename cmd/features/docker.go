@@ -60,7 +60,7 @@ var dockerCmd = &cobra.Command{
 		}
 
 		// delete initializers.LoadEnv()
-		if err := functions.DeleteCode(cwd+`\cmd\migrations\main.go`, "initializers.LoadEnv()"); err != nil {
+		if err := functions.DeleteCode(cwd+`\migrations\migrate.go`, "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 

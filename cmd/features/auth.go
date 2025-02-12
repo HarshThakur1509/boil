@@ -105,7 +105,7 @@ var authCmd = &cobra.Command{
 
 		functions.InsertCode(modelsPath, modelStruct)
 
-		migratePath := fmt.Sprintf("%s\\cmd\\migrations\\main.go", viper.GetString("path"))
+		migratePath := fmt.Sprintf("%s\\migrations\\migrate.go", viper.GetString("path"))
 
 		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
 

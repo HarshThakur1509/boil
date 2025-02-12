@@ -20,7 +20,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:     "boil",
 	Short:   "Boil is CLI tool to create boilerplate code for golang rest api which use go standard library.",
-	Version: "1.4.0",
+	Version: "1.4.1",
 }
 
 func Execute() {

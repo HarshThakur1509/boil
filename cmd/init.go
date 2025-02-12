@@ -57,7 +57,7 @@ var initCmd = &cobra.Command{
 		functions.ReplaceCode(cwd+`\go.mod`, name, "myapp")
 		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
 		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
-		functions.ReplaceCode(cwd+`\cmd\migrations\main.go`, name, "myapp")
+		functions.ReplaceCode(cwd+`\migrations\migrate.go`, name, "myapp")
 		functions.ReplaceCode(cwd+`\internal\routes\routes.go`, name, "myapp")
 	},
 }
