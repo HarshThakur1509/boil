@@ -7,124 +7,172 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
-// authCmd represents the auth command
 var authCmd = &cobra.Command{
 	Use:   "auth",
-	Short: "A brief description of your command",
-	Long:  ``,
+	Short: "Add authentication system to the project",
+	Long:  `Sets up authentication system including models, routes, and handlers`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		repoURL := "https://github.com/HarshThakur1509/boilerplate"
-		framework := viper.GetString("framework")
-		repoFolder := "features/auth/" + framework + "/"
 		cwd := viper.GetString("path")
+		framework := viper.GetString("framework")
+		orm := viper.GetString("orm")
 
-		if !viper.IsSet("Features") {
-			viper.Set("Features", make(map[string]interface{}))
-		}
-
-		// Get the features map properly typed
-		features := viper.GetStringMap("Features")
-		featureName := "Auth"
-		features[featureName] = true
-		viper.Set("Features", features)
-
-		// Write configuration correctly
-		if err := viper.WriteConfig(); err != nil {
-			// If config file doesn't exist, create it
-			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				if err := viper.SafeWriteConfigAs(viper.ConfigFileUsed()); err != nil {
-					log.Fatalf("Failed to create config file: %v", err)
-				}
-			} else {
-				log.Fatalf("Failed to update config file: %v", err)
-			}
-		}
-
-		// Create temporary directory
-		tempDir, err := os.MkdirTemp(cwd, "boil-auth-*")
-		if err != nil {
-			log.Fatalf("Failed to create temp directory: %v", err)
-		}
+		setupConfig()
+		tempDir := createTempDir(cwd)
 		defer os.RemoveAll(tempDir)
 
-		// Clone and move files
+		// Setup authentication components
+		setupRoutes(cwd, framework)
+		setupHandlers(cwd, framework, tempDir)
+		setupMain(cwd, framework)
 
-		// api content
-		content, err := functions.ReadRepoFile(repoURL, repoFolder+`internal/routes/routes.go`)
-		if err != nil {
-			fmt.Println(err)
-		}
-		apiContent := fmt.Sprintf(`%v
-		// Add code here
-		`, string(content))
-		functions.ReplaceCode(cwd+`\internal\routes\routes.go`, apiContent, "// Add code here")
-
-		// models content
-
-		fieldMap := make(map[string]any)
-
-		fieldMap["Email"] = "string `gorm:\"uniqueIndex;not null\"`"
-		fieldMap["Password"] = "string `gorm:\"default:NULL\" json:\"-\"`"
-		fieldMap["Name"] = "string"
-		fieldMap["ResetToken"] = "string `json:\"-\"`"
-		fieldMap["TokenExpiry"] = "time.Time `json:\"-\"`"
-
-		// Add model to "Models" section
-		if !viper.IsSet("Models") {
-			viper.Set("Models", make(map[string]interface{}))
-		}
-		models := viper.GetStringMap("Models")
-		modelName := "User"
-		models[modelName] = fieldMap
-		viper.Set("Models", models)
-
-		// Write configuration
-		if err := viper.WriteConfig(); err != nil {
-			// If the config file does not exist, create and write to it
-			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				if err := viper.SafeWriteConfig(); err != nil {
-					log.Fatalf("Failed to create and write to config file: %v", err)
-				}
-			} else {
-				log.Fatalf("Failed to write to config file: %v", err)
-			}
+		// Create user model
+		fieldMap := map[string]any{
+			"Email":       "string",
+			"Password":    "string",
+			"Name":        "string",
+			"ResetToken":  "string",
+			"TokenExpiry": "time.Time",
 		}
 
-		// Append struct definition to models.go
-		structFields := functions.WriteMap(fieldMap)
-		modelStruct := fmt.Sprintf("\ntype %s struct {\n	gorm.Model\n	%s}\n", strings.Title(modelName), structFields)
-		modelsPath := fmt.Sprintf("%s\\internal\\models\\models.go", viper.GetString("path"))
+		updateConfigTables(fieldMap)
 
-		functions.InsertCode(modelsPath, modelStruct)
-
-		migratePath := fmt.Sprintf("%s\\migrations\\migrate.go", viper.GetString("path"))
-
-		functions.ToAutoMigrate(migratePath, strings.Title(modelName))
-
-		// handlers content
-		if err := functions.CloneRepo(repoURL, tempDir, repoFolder+"internal/handlers", cwd+`\internal\handlers`); err != nil {
-			log.Fatalf("Code setup failed: %v", err)
+		switch orm {
+		case "gorm":
+			createModel(fieldMap, "user", cwd)
+		case "sqlc":
+			createSQLTable(fieldMap, "user", cwd)
+		default:
+			log.Fatalf("Unsupported ORM: %s", orm)
 		}
-
-		// main content
-		content, err = functions.ReadRepoFile(repoURL, repoFolder+`cmd/api/main.go`)
-		if err != nil {
-			fmt.Println(err)
-		}
-		functions.ReplaceCode(cwd+`\cmd\api\main.go`, string(content), "// Add code here")
-
 	},
 }
 
 func init() {
 	FeaturesCmd.AddCommand(authCmd)
+}
 
+func setupConfig() {
+	viper.SetDefault("Features", make(map[string]interface{}))
+	viper.SetDefault("Tables", make(map[string]interface{}))
+
+	features := viper.GetStringMap("Features")
+	features["Auth"] = true
+	viper.Set("Features", features)
+
+	if err := viper.WriteConfig(); err != nil {
+		handleConfigError(err)
+	}
+}
+
+func createTempDir(cwd string) string {
+	tempDir, err := os.MkdirTemp(cwd, "boil-auth-*")
+	if err != nil {
+		log.Fatalf("Failed to create temp directory: %v", err)
+	}
+	return tempDir
+}
+
+func setupRoutes(cwd, framework string) {
+	routesPath := filepath.Join("features", "auth", framework, "internal", "routes", "routes.go")
+	content, err := functions.ReadRepoFile(
+		"https://github.com/HarshThakur1509/boilerplate",
+		routesPath,
+	)
+	if err != nil {
+		log.Printf("Failed to read routes template: %v", err)
+		return
+	}
+
+	targetPath := filepath.Join(cwd, "internal", "routes", "routes.go")
+	if err := functions.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
+		log.Printf("Failed to update routes: %v", err)
+	}
+}
+
+func setupHandlers(cwd, framework string, tempDir string) {
+	src := filepath.Join("features", "auth", framework, "internal", "handlers")
+	dest := filepath.Join(cwd, "internal", "handlers")
+
+	if err := functions.CloneRepo(
+		"https://github.com/HarshThakur1509/boilerplate",
+		tempDir,
+		src,
+		dest,
+	); err != nil {
+		log.Fatalf("Handler setup failed: %v", err)
+	}
+}
+
+func setupMain(cwd, framework string) {
+	mainPath := filepath.Join("features", "auth", framework, "cmd", "api", "main.go")
+	content, err := functions.ReadRepoFile(
+		"https://github.com/HarshThakur1509/boilerplate",
+		mainPath,
+	)
+	if err != nil {
+		log.Printf("Failed to read main template: %v", err)
+		return
+	}
+
+	targetPath := filepath.Join(cwd, "cmd", "api", "main.go")
+	if err := functions.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
+		log.Printf("Failed to update main: %v", err)
+	}
+}
+
+func updateConfigTables(fieldMap map[string]any) {
+	tables := viper.GetStringMap("Tables")
+	tables["user"] = fieldMap
+	viper.Set("Tables", tables)
+
+	if err := viper.WriteConfig(); err != nil {
+		handleConfigError(err)
+	}
+}
+
+func createModel(fieldMap map[string]any, tableName, cwd string) {
+	structFields := functions.WriteMap(fieldMap)
+	caser := cases.Title(language.English)
+	titleStr := caser.String(tableName)
+
+	modelStruct := fmt.Sprintf("\ntype %s struct {\n\tgorm.Model\n%s}\n", titleStr, structFields)
+	modelsPath := filepath.Join(cwd, "internal", "models", "models.go")
+
+	if err := functions.InsertCode(modelsPath, modelStruct); err != nil {
+		log.Printf("Failed to insert model: %v", err)
+	}
+
+	migratePath := filepath.Join(cwd, "migrations", "migrate.go")
+	if err := functions.ToAutoMigrate(migratePath, titleStr); err != nil {
+		log.Printf("Failed to update migrations: %v", err)
+	}
+}
+
+func createSQLTable(fieldMap map[string]any, tableName, cwd string) {
+	fieldSQL := functions.GenerateFields(fieldMap)
+	tableDef := fmt.Sprintf("CREATE TABLE %s\n(\n\tid SERIAL PRIMARY KEY,\n%s,\n\tcreated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tupdated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tdeleted_at TIMESTAMPTZ\n);", tableName, fieldSQL)
+
+	migrationPath := filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql")
+	if err := functions.InsertCode(migrationPath, tableDef); err != nil {
+		log.Printf("Failed to create SQL table: %v", err)
+	}
+}
+
+func handleConfigError(err error) {
+	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		if err := viper.SafeWriteConfig(); err != nil {
+			log.Fatalf("Failed to create config file: %v", err)
+		}
+	} else {
+		log.Fatalf("Config error: %v", err)
+	}
 }

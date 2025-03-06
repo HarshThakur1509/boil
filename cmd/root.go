@@ -9,7 +9,7 @@ import (
 
 	"github.com/HarshThakur1509/boil/cmd/features"
 	"github.com/HarshThakur1509/boil/cmd/handlers"
-	"github.com/HarshThakur1509/boil/cmd/models"
+	"github.com/HarshThakur1509/boil/cmd/tables"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,7 +20,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:     "boil",
 	Short:   "Boil is CLI tool to create boilerplate code for golang rest api which use go standard library.",
-	Version: "1.4.1",
+	Version: "1.5.0",
 }
 
 func Execute() {
@@ -34,7 +34,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.AddCommand(handlers.HandlersCmd)
-	rootCmd.AddCommand(models.ModelsCmd)
+	rootCmd.AddCommand(tables.TablesCmd)
 	rootCmd.AddCommand(features.FeaturesCmd)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")

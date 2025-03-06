@@ -6,9 +6,11 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"strings"
+	"path/filepath"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,58 +21,81 @@ var listallCmd = &cobra.Command{
 	Use:   "listall",
 	Short: "listall command adds listall handler to the project.",
 	Run: func(cmd *cobra.Command, args []string) {
+		cwd := viper.GetString("path")
+		orm := viper.GetString("orm")
+		framework := viper.GetString("framework")
 		model, _ := cmd.Flags().GetString("name")
 		if model == "" {
 			log.Fatal("Model name is required. Use --name flag")
 		}
 
-		capital := strings.Title(model)
-		controllersPath := fmt.Sprintf("%s\\internal\\handlers\\handlers.go", viper.GetString("path"))
+		caser := cases.Title(language.English)
+		capital := caser.String(model)
+		handlersPath := filepath.Join(cwd, "internal", "handlers", "handlers.go")
 
 		code := ""
-		apiPath := ""
-		apiCode := ""
+		routesPath := ""
+		routesCode := ""
 
-		if viper.GetString("Framework") == "standard" {
+		// Setup Orm
+		ormCode := ""
+		switch orm {
+		case "gorm":
+			ormCode = fmt.Sprintf(`	var %[2]v []models.%[1]v
+			initializers.DB.Find(&%[2]v)
+			`, capital, model)
+		case "sqlc":
+			ormCode = fmt.Sprintf(`%[2]v, err := db.New(initializers.DB).List%[1]v(r.Context())
+			if err != nil {
+			http.Error(w, "Failed to fetch %[1]v", http.StatusInternalServerError)
+			return
+			}`, capital, model)
+		default:
+			log.Fatal("Invalid ORM. Use --orm flag")
+		}
 
+		// Setup Framework
+		switch framework {
+		case "standard":
 			code = fmt.Sprintf(`
 func List%[1]v(w http.ResponseWriter, r *http.Request) {
-	var %[2]v []models.%[1]v
-	initializers.DB.Find(&%[2]v)
+	%[3]v
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(%[2]v)
 	}
-			`, capital, model)
+			`, capital, model, ormCode)
 
-			apiPath = fmt.Sprintf("%s\\internal\\routes\\routes.go", viper.GetString("path"))
-			apiCode = fmt.Sprintf(`
+			routesPath = filepath.Join(cwd, "internal", "routes", "routes.go")
+			routesCode = fmt.Sprintf(`
 router.HandleFunc("GET /%[2]v", handlers.List%[1]v)
 // Add code here
 			`, capital, model)
-		} else if viper.GetString("Framework") == "gin" {
+		case "gin":
 
 			code = fmt.Sprintf(`
 func List%[1]v(c *gin.Context) {
-	var %[2]v []models.%[1]v
-		initializers.DB.Find(&%[2]v)
+	%[3]v
 
 	c.JSON(200, gin.H{
 		"%[2]v": %[2]v,
 	})
 }
-			`, capital, model)
+			`, capital, model, ormCode)
 
-			apiPath = fmt.Sprintf("%s\\cmd\\api\\main.go", viper.GetString("path"))
-			apiCode = fmt.Sprintf(`
+			routesPath = filepath.Join(cwd, "cmd", "api", "main.go")
+			routesCode = fmt.Sprintf(`
 r.GET("/%[2]v", handlers.List%[1]v)
 // Add code here
 			`, capital, model)
+		default:
+			log.Fatal("Invalid framework. Use --framework flag")
+
 		}
 
-		functions.InsertCode(controllersPath, code)
-		functions.ReplaceCode(apiPath, apiCode, "// Add code here")
+		functions.InsertCode(handlersPath, code)
+		functions.ReplaceCode(routesPath, routesCode, "// Add code here")
 		fmt.Printf("Listall handler added for model: %s\n", model)
 	},
 }

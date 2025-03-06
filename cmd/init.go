@@ -4,6 +4,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
@@ -18,7 +19,6 @@ var initCmd = &cobra.Command{
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
 		framework, _ := cmd.Flags().GetString("framework")
 		name, _ := cmd.Flags().GetString("name")
-		cwd := viper.GetString("path")
 
 		if name == "" {
 			name = "myapp"
@@ -38,8 +38,11 @@ var initCmd = &cobra.Command{
 
 		// Configure Viper settings
 		viper.Set("path", cwd)
-		if framework != "" {
+		if !viper.IsSet("framework") {
 			viper.Set("framework", framework)
+		}
+		if !viper.IsSet("name") {
+			viper.Set("name", name)
 		}
 
 		// Write configuration
@@ -50,15 +53,16 @@ var initCmd = &cobra.Command{
 		}
 
 		// Clone repository
-		if err := functions.CloneRepo(repoURL, tempDir, framework, cwd); err != nil {
+		repoFolder := filepath.Join("", framework)
+		if err := functions.CloneRepo(repoURL, tempDir, repoFolder, cwd); err != nil {
 			log.Fatalf("Initialization failed: %v", err)
 		}
 
-		functions.ReplaceCode(cwd+`\go.mod`, name, "myapp")
-		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
-		functions.ReplaceCode(cwd+`\cmd\api\main.go`, name, "myapp")
-		functions.ReplaceCode(cwd+`\migrations\migrate.go`, name, "myapp")
-		functions.ReplaceCode(cwd+`\internal\routes\routes.go`, name, "myapp")
+		// Change project name
+		functions.ReplaceCode(filepath.Join(cwd, "go.mod"), name, "myapp")
+		functions.ReplaceCode(filepath.Join(cwd, "cmd", "api", "main.go"), name, "myapp")
+		functions.ReplaceCode(filepath.Join(cwd, "cmd", "api", "main.go"), name, "myapp")
+		functions.ReplaceCode(filepath.Join(cwd, "internal", "routes", "routes.go"), name, "myapp")
 	},
 }
 

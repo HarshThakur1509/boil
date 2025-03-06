@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/HarshThakur1509/boil/cmd/functions"
 	"github.com/spf13/cobra"
@@ -22,7 +23,7 @@ var dockerCmd = &cobra.Command{
 
 		repoURL := "https://github.com/HarshThakur1509/boilerplate"
 		framework := viper.GetString("framework")
-		repoFolder := "features/docker/" + framework
+		repoFolder := filepath.Join("features", "docker", framework)
 		cwd := viper.GetString("path")
 
 		if !viper.IsSet("Features") {
@@ -60,11 +61,11 @@ var dockerCmd = &cobra.Command{
 		}
 
 		// delete initializers.LoadEnv()
-		if err := functions.DeleteCode(cwd+`\migrations\migrate.go`, "initializers.LoadEnv()"); err != nil {
+		if err := functions.DeleteCode(filepath.Join(cwd, "migrations", "migrate.go"), "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 
-		if err := functions.DeleteCode(cwd+`\cmd\api\main.go`, "initializers.LoadEnv()"); err != nil {
+		if err := functions.DeleteCode(filepath.Join(cwd, "cmd", "api", "main.go"), "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 
