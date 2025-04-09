@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/HarshThakur1509/boil/cmd/functions"
+	"github.com/HarshThakur1509/boil/cmd/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -56,16 +56,16 @@ var dockerCmd = &cobra.Command{
 		defer os.RemoveAll(tempDir)
 
 		// Clone and move files
-		if err := functions.CloneRepo(repoURL, tempDir, repoFolder, cwd); err != nil {
+		if err := util.CloneRepo(repoURL, tempDir, repoFolder, cwd); err != nil {
 			log.Fatalf("Docker setup failed: %v", err)
 		}
 
 		// delete initializers.LoadEnv()
-		if err := functions.DeleteCode(filepath.Join(cwd, "migrations", "migrate.go"), "initializers.LoadEnv()"); err != nil {
+		if err := util.DeleteCode(filepath.Join(cwd, "migrations", "migrate.go"), "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 
-		if err := functions.DeleteCode(filepath.Join(cwd, "cmd", "api", "main.go"), "initializers.LoadEnv()"); err != nil {
+		if err := util.DeleteCode(filepath.Join(cwd, "cmd", "api", "main.go"), "initializers.LoadEnv()"); err != nil {
 			log.Fatalf("Code deletion failed: %v", err)
 		}
 

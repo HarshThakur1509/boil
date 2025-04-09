@@ -8,7 +8,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/HarshThakur1509/boil/cmd/functions"
+	"github.com/HarshThakur1509/boil/cmd/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -23,6 +23,7 @@ var postCmd = &cobra.Command{
 		cwd := viper.GetString("path")
 		orm := viper.GetString("orm")
 		framework := viper.GetString("framework")
+
 		model, _ := cmd.Flags().GetString("name")
 		if model == "" {
 			log.Fatal("Model name is required. Use --name flag")
@@ -31,14 +32,34 @@ var postCmd = &cobra.Command{
 		caser := cases.Title(language.English)
 		capital := caser.String(model)
 
+		// Add Post to Handlers section
+		if !viper.IsSet("Handlers") {
+			viper.Set("Handlers", make(map[string]interface{}))
+		}
+		handlers := viper.GetStringMap("Handlers")
+		handlers["Post"] = model
+		viper.Set("Handlers", handlers)
+
+		// Write configuration
+		if err := viper.WriteConfig(); err != nil {
+			// If the config file does not exist, create and write to it
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				if err := viper.SafeWriteConfig(); err != nil {
+					log.Fatalf("Failed to create and write to config file: %v", err)
+				}
+			} else {
+				log.Fatalf("Failed to write to config file: %v", err)
+			}
+		}
+
 		viper.ReadInConfig()
 
 		// Check if the model exists
-		viper.IsSet(fmt.Sprintf("models.%s", model))
+		viper.IsSet(fmt.Sprintf("tables.%s", model))
 
 		// Get the model details
-		modelData := viper.GetStringMap(fmt.Sprintf("models.%s", model))
-		fields := functions.WriteMap(modelData)
+		modelData := viper.GetStringMap(fmt.Sprintf("tables.%s", model))
+		fields := util.WriteMap(modelData)
 
 		handlersPath := filepath.Join(cwd, "internal", "handlers", "handlers.go")
 
@@ -132,8 +153,8 @@ r.POST("/%[2]v", handlers.Post%[1]v)
 				`, capital, model)
 		}
 
-		functions.InsertCode(handlersPath, code)
-		functions.ReplaceCode(routesPath, routesCode, "// Add code here")
+		util.InsertCode(handlersPath, code)
+		util.ReplaceCode(routesPath, routesCode, "// Add code here")
 		fmt.Printf("Post handler added for model: %s\n", model)
 	},
 }

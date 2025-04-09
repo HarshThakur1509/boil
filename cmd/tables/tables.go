@@ -8,7 +8,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/HarshThakur1509/boil/cmd/functions"
+	"github.com/HarshThakur1509/boil/cmd/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -66,24 +66,24 @@ var TablesCmd = &cobra.Command{
 		switch orm {
 		case "gorm":
 			// Append struct definition to models.go
-			structFields := functions.WriteMap(fieldMap)
+			structFields := util.WriteMap(fieldMap)
 
 			caser := cases.Title(language.English)
 			titleStr := caser.String(tableName)
 
 			modelStruct := fmt.Sprintf("\ntype %s struct {\n	gorm.Model\n	%s}\n", titleStr, structFields)
 
-			functions.InsertCode(filepath.Join(cwd, "internal", "models", "models.go"), modelStruct)
+			util.InsertCode(filepath.Join(cwd, "internal", "models", "models.go"), modelStruct)
 
-			functions.ToAutoMigrate(filepath.Join(cwd, "migrations", "migrate.go"), titleStr)
+			util.ToAutoMigrate(filepath.Join(cwd, "migrations", "migrate.go"), titleStr)
 
 			fmt.Printf("Model '%s' with fields %v has been saved and YAML updated.\n", tableName, fieldMap)
 		case "sqlc":
 			// Append table definition to migrations/db/migrations/00001_create_table.sql
-			fieldSql := functions.GenerateFields(fieldMap)
+			fieldSql := util.GenerateFields(fieldMap)
 			tableDef := fmt.Sprintf("CREATE TABLE %s\n(id SERIAL PRIMARY KEY,\n%s,\ncreated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\nupdated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\ndeleted_at TIMESTAMPTZ)", tableName, fieldSql)
 
-			functions.InsertCode(filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql"), tableDef)
+			util.InsertCode(filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql"), tableDef)
 
 			fmt.Printf("Model '%s' with fields %v has been saved and YAML updated.\n", tableName, fieldMap)
 

@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/HarshThakur1509/boil/cmd/functions"
+	"github.com/HarshThakur1509/boil/cmd/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -83,7 +83,7 @@ func createTempDir(cwd string) string {
 
 func setupRoutes(cwd, framework string) {
 	routesPath := filepath.Join("features", "auth", framework, "internal", "routes", "routes.go")
-	content, err := functions.ReadRepoFile(
+	content, err := util.ReadRepoFile(
 		"https://github.com/HarshThakur1509/boilerplate",
 		routesPath,
 	)
@@ -93,7 +93,7 @@ func setupRoutes(cwd, framework string) {
 	}
 
 	targetPath := filepath.Join(cwd, "internal", "routes", "routes.go")
-	if err := functions.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
+	if err := util.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
 		log.Printf("Failed to update routes: %v", err)
 	}
 }
@@ -102,7 +102,7 @@ func setupHandlers(cwd, framework string, tempDir string) {
 	src := filepath.Join("features", "auth", framework, "internal", "handlers")
 	dest := filepath.Join(cwd, "internal", "handlers")
 
-	if err := functions.CloneRepo(
+	if err := util.CloneRepo(
 		"https://github.com/HarshThakur1509/boilerplate",
 		tempDir,
 		src,
@@ -114,7 +114,7 @@ func setupHandlers(cwd, framework string, tempDir string) {
 
 func setupMain(cwd, framework string) {
 	mainPath := filepath.Join("features", "auth", framework, "cmd", "api", "main.go")
-	content, err := functions.ReadRepoFile(
+	content, err := util.ReadRepoFile(
 		"https://github.com/HarshThakur1509/boilerplate",
 		mainPath,
 	)
@@ -124,7 +124,7 @@ func setupMain(cwd, framework string) {
 	}
 
 	targetPath := filepath.Join(cwd, "cmd", "api", "main.go")
-	if err := functions.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
+	if err := util.ReplaceCode(targetPath, string(content), "// Add code here"); err != nil {
 		log.Printf("Failed to update main: %v", err)
 	}
 }
@@ -140,29 +140,29 @@ func updateConfigTables(fieldMap map[string]any) {
 }
 
 func createModel(fieldMap map[string]any, tableName, cwd string) {
-	structFields := functions.WriteMap(fieldMap)
+	structFields := util.WriteMap(fieldMap)
 	caser := cases.Title(language.English)
 	titleStr := caser.String(tableName)
 
 	modelStruct := fmt.Sprintf("\ntype %s struct {\n\tgorm.Model\n%s}\n", titleStr, structFields)
 	modelsPath := filepath.Join(cwd, "internal", "models", "models.go")
 
-	if err := functions.InsertCode(modelsPath, modelStruct); err != nil {
+	if err := util.InsertCode(modelsPath, modelStruct); err != nil {
 		log.Printf("Failed to insert model: %v", err)
 	}
 
 	migratePath := filepath.Join(cwd, "migrations", "migrate.go")
-	if err := functions.ToAutoMigrate(migratePath, titleStr); err != nil {
+	if err := util.ToAutoMigrate(migratePath, titleStr); err != nil {
 		log.Printf("Failed to update migrations: %v", err)
 	}
 }
 
 func createSQLTable(fieldMap map[string]any, tableName, cwd string) {
-	fieldSQL := functions.GenerateFields(fieldMap)
+	fieldSQL := util.GenerateFields(fieldMap)
 	tableDef := fmt.Sprintf("CREATE TABLE %s\n(\n\tid SERIAL PRIMARY KEY,\n%s,\n\tcreated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tupdated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tdeleted_at TIMESTAMPTZ\n);", tableName, fieldSQL)
 
 	migrationPath := filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql")
-	if err := functions.InsertCode(migrationPath, tableDef); err != nil {
+	if err := util.InsertCode(migrationPath, tableDef); err != nil {
 		log.Printf("Failed to create SQL table: %v", err)
 	}
 }

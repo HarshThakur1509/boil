@@ -8,7 +8,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/HarshThakur1509/boil/cmd/functions"
+	"github.com/HarshThakur1509/boil/cmd/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -23,6 +23,7 @@ var listidCmd = &cobra.Command{
 		cwd := viper.GetString("path")
 		orm := viper.GetString("orm")
 		framework := viper.GetString("framework")
+
 		model, _ := cmd.Flags().GetString("name")
 
 		if model == "" {
@@ -31,6 +32,26 @@ var listidCmd = &cobra.Command{
 
 		caser := cases.Title(language.English)
 		capital := caser.String(model)
+
+		// Add Delete to Handlers section
+		if !viper.IsSet("Handlers") {
+			viper.Set("Handlers", make(map[string]interface{}))
+		}
+		handlers := viper.GetStringMap("Handlers")
+		handlers["ListId"] = model
+		viper.Set("Handlers", handlers)
+
+		// Write configuration
+		if err := viper.WriteConfig(); err != nil {
+			// If the config file does not exist, create and write to it
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				if err := viper.SafeWriteConfig(); err != nil {
+					log.Fatalf("Failed to create and write to config file: %v", err)
+				}
+			} else {
+				log.Fatalf("Failed to write to config file: %v", err)
+			}
+		}
 
 		handlersPath := filepath.Join(cwd, "internal", "handlers", "handlers.go")
 
@@ -100,8 +121,8 @@ r.GET("/%[2]v/:id", handlers.List%[1]vId)
 			log.Fatal("Invalid framework. Use --framework flag")
 		}
 
-		functions.InsertCode(handlersPath, code)
-		functions.ReplaceCode(routesPath, routesCode, "// Add code here")
+		util.InsertCode(handlersPath, code)
+		util.ReplaceCode(routesPath, routesCode, "// Add code here")
 		fmt.Printf("Listing all entities for model: %s\n", model)
 	},
 }

@@ -1,4 +1,4 @@
-package functions
+package util
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"gopkg.in/yaml.v3"
 )
 
 func InsertCode(path string, content string) error {
@@ -141,6 +142,7 @@ func GenerateFields(fieldMap map[string]any) string {
 	return strings.Join(columns, ",\n")
 }
 
+// Git Commands
 func CloneRepo(repoURL, tempDir, repoFolder, targetDir string) error {
 	if err := cloneSparseRepo(repoURL, tempDir, targetDir, repoFolder); err != nil {
 		return fmt.Errorf("clone failed: %w", err)
@@ -278,4 +280,92 @@ func ReadRepoFile(repoURL, filePath string) ([]byte, error) {
 	}
 
 	return os.ReadFile(targetFile)
+}
+
+// Yaml Commands
+func ReadYaml(filename string) (map[string]interface{}, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct full path to the YAML file
+	filePath := filepath.Join(cwd, filename)
+	yamlFile, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var data map[string]interface{}
+	if err := yaml.Unmarshal(yamlFile, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func YamlExec(data map[string]interface{}) error {
+
+	framework := data["framework"].(string)
+	name := data["name"].(string)
+	// Optional fields
+	orm, _ := data["orm"].(string) // OK if missing
+
+	// Tables (optional)
+	tables, _ := data["tables"].(map[string]interface{})
+	if tables == nil {
+		tables = make(map[string]interface{})
+	}
+
+	// Handlers (optional)
+	handlers, _ := data["handlers"].(map[string]interface{})
+	if handlers == nil {
+		handlers = make(map[string]interface{})
+	}
+
+	// Features (optional)
+	features, _ := data["features"].(map[string]interface{})
+	if features == nil {
+		features = make(map[string]interface{})
+	}
+
+	commands := []*exec.Cmd{}
+
+	// 1. Initial "init" command
+	initArgs := []string{"init", "--framework", framework, "--name", name}
+	if orm != "" {
+		initArgs = append(initArgs, "--orm", orm)
+	}
+	commands = append(commands, exec.Command("boil", initArgs...))
+
+	// 2. Generate tables
+	for tableName, tableData := range tables {
+		args := []string{"tables", "--name", tableName, "--fields"}
+		fields := tableData.(map[string]interface{})
+		for fieldName, fieldType := range fields {
+			// Append name and type as SEPARATE arguments
+			args = append(args, fieldName, fieldType.(string))
+		}
+		commands = append(commands, exec.Command("boil", args...))
+	}
+
+	// 3. Generate handlers (example: "boil handlers <handler>")
+	for handlerName, handlerTable := range handlers {
+		args := []string{"handlers", handlerName, "--name", handlerTable.(string)}
+		commands = append(commands, exec.Command("boil", args...))
+	}
+	// 4. Generate features (example: "boil features <feature>")
+	for featureName, _ := range features {
+		args := []string{"features", featureName}
+		commands = append(commands, exec.Command("boil", args...))
+	}
+	// Execute all commands in sequence
+	for _, cmd := range commands {
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
