@@ -83,7 +83,7 @@ var TablesCmd = &cobra.Command{
 			fieldSql := util.GenerateFields(fieldMap)
 			tableDef := fmt.Sprintf("CREATE TABLE %s\n(id SERIAL PRIMARY KEY,\n%s,\ncreated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\nupdated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\ndeleted_at TIMESTAMPTZ)", tableName, fieldSql)
 
-			util.InsertCode(filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql"), tableDef)
+			util.InsertCode(filepath.Join(cwd, "migrations", "db", "migrations", "000001_create_table.up.sql"), tableDef)
 
 			fmt.Printf("Model '%s' with fields %v has been saved and YAML updated.\n", tableName, fieldMap)
 

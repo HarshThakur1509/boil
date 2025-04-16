@@ -25,8 +25,21 @@ var authCmd = &cobra.Command{
 		framework := viper.GetString("framework")
 		orm := viper.GetString("orm")
 
-		setupConfig()
-		tempDir := createTempDir(cwd)
+		viper.SetDefault("Features", make(map[string]interface{}))
+		viper.SetDefault("Tables", make(map[string]interface{}))
+
+		features := viper.GetStringMap("Features")
+		features["Auth"] = true
+		viper.Set("Features", features)
+
+		if err := viper.WriteConfig(); err != nil {
+			handleConfigError(err)
+		}
+
+		tempDir, err := os.MkdirTemp(cwd, "boil-auth-*")
+		if err != nil {
+			log.Fatalf("Failed to create temp directory: %v", err)
+		}
 		defer os.RemoveAll(tempDir)
 
 		// Setup authentication components
@@ -58,27 +71,6 @@ var authCmd = &cobra.Command{
 
 func init() {
 	FeaturesCmd.AddCommand(authCmd)
-}
-
-func setupConfig() {
-	viper.SetDefault("Features", make(map[string]interface{}))
-	viper.SetDefault("Tables", make(map[string]interface{}))
-
-	features := viper.GetStringMap("Features")
-	features["Auth"] = true
-	viper.Set("Features", features)
-
-	if err := viper.WriteConfig(); err != nil {
-		handleConfigError(err)
-	}
-}
-
-func createTempDir(cwd string) string {
-	tempDir, err := os.MkdirTemp(cwd, "boil-auth-*")
-	if err != nil {
-		log.Fatalf("Failed to create temp directory: %v", err)
-	}
-	return tempDir
 }
 
 func setupRoutes(cwd, framework string) {
@@ -161,7 +153,7 @@ func createSQLTable(fieldMap map[string]any, tableName, cwd string) {
 	fieldSQL := util.GenerateFields(fieldMap)
 	tableDef := fmt.Sprintf("CREATE TABLE %s\n(\n\tid SERIAL PRIMARY KEY,\n%s,\n\tcreated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tupdated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n\tdeleted_at TIMESTAMPTZ\n);", tableName, fieldSQL)
 
-	migrationPath := filepath.Join(cwd, "migrations", "db", "migrations", "00001_create_table.sql")
+	migrationPath := filepath.Join(cwd, "migrations", "db", "migrations", "000001_create_table.up.sql")
 	if err := util.InsertCode(migrationPath, tableDef); err != nil {
 		log.Printf("Failed to create SQL table: %v", err)
 	}
